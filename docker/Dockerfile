@@ -7,7 +7,6 @@ WORKDIR /indicator
 ENV WORKDIR=/indicator
 ENV DEPENDENCIES=${WORKDIR}/dependencies
 ENV DATA=${WORKDIR}/data
-ENV DATA=${WORKDIR}/data
 
 COPY ./dependencies ${DEPENDENCIES}
 
@@ -24,4 +23,4 @@ RUN apt-get update \
 # docker build -t stevensotelo/fao_sow:latest .
 # docker tag xx stevensotelo/fao_sow:latest
 
-# docker run -it --rm -v D:/CIAT/Code/CWR/fao_sow/src:/scripts stevensotelo/fao_sow:latest /bin/bash
+# docker run -it --rm -v D:/CIAT/Code/CWR/fao_sow:/indicator stevensotelo/fao_sow:latest /bin/bash
