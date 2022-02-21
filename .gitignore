@@ -1,0 +1,12 @@
+# Data
+/data/inputs
+/data/logs
+/data/backups
+
+# Python
+*/__pycache__
+*.__pycache__
+*.pyc
+
+# Jupyter
+*/.ipynb_checkpoints/*
