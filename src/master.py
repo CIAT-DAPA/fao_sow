@@ -35,6 +35,9 @@ print("Extracting global parameters")
 treaty_encoding = conf_general.loc[conf_general["variable"] == "treaty_encoding","value"].values[0]
 treaty_file = conf_general.loc[conf_general["variable"] == "treaty_file","value"].values[0]
 treaty_sheet = conf_general.loc[conf_general["variable"] == "treaty_sheet","value"].values[0]
+treaty_key_crop = conf_general.loc[conf_general["variable"] == "treaty_key_crop","value"].values[0]
+plant_treaty_fields = str(conf_general.loc[conf_general["variable"] == "plant_treaty_fields","value"].values[0]).split(',')
+plant_treaty_key_crop = conf_general.loc[conf_general["variable"] == "plant_treaty_key_crop","value"].values[0]
 
 ##############################################
 # 02 - Processing Treaty Data
@@ -42,5 +45,5 @@ treaty_sheet = conf_general.loc[conf_general["variable"] == "treaty_sheet","valu
 
 print("02 - Processing Treaty Data")
 treaty = Treaty(inputs_folder, treaty_file, treaty_sheet, workspace_folder)
-treaty.merge_uses(conf_xls.parse("plant_treaty"), force=True)
+treaty.merge_uses(conf_xls.parse("plant_treaty"), plant_treaty_fields, plant_treaty_key_crop, treaty_key_crop, force=True)
 
