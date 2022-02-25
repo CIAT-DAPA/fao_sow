@@ -213,7 +213,7 @@ class Treaty(object):
 
     ## Method that merge the data with fao for each crop.
     # (string) treaty_key_crop: Field name for key of crop
-    # (string) fao_file: File name of fao data. It should be into inputs folder
+    # (string[]) fao_files: List of files with fao data. They should be into inputs folder
     # (string) fao_years: List of year to calculate average
     # (string) fao_elements_col: Column name which has elements or variables
     # (string) fao_key_crop: Column names for key crop in fao
@@ -221,65 +221,124 @@ class Treaty(object):
     # (string) step: prefix of the output files. By default it is 03
     # (bool) force: Set if the process have to for the execution of all files even if the were processed before.
     #               By default it is False
-    def merge_fao(self, treaty_key_crop, fao_file, fao_years, fao_elements_col,fao_key_crop, fao_encoding, step="05",force=False):
+    def merge_fao(self, treaty_key_crop, fao_files, fao_years, fao_elements_col,fao_key_crop, fao_encoding, step="05",force=False):
         final_path = os.path.join(self.getworkspace(),step)
         mf.create_review_folders(final_path, sm=False)
         # It checks if files should be force to process again or if the path exist
         final_file = os.path.join(final_path,"OK",self.outputs + ".csv")
         if force or not os.path.exists(final_file):
-            fao_path = os.path.join(self.inputs_folder,fao_file)
-            print("\tProcessing germplasm=", fao_path,"data=",os.path.join(self.getworkspacestep("04"),self.outputs + ".csv"))
-            df_fao = pd.read_csv(fao_path,encoding=fao_encoding) 
+            # Loading data
+            print("\tProcessing data=",os.path.join(self.getworkspacestep("04"),self.outputs + ".csv"))
             df = pd.read_csv(os.path.join(self.getworkspacestep("04"),self.outputs + ".csv"), encoding = self.encoding)
+            # Loop for each fao file
+            for fao_file in fao_files:
+                fao_path = os.path.join(self.inputs_folder,fao_file)
+                print("\t\tProcessing fao=", fao_path)
+                # Load fao file
+                df_fao = pd.read_csv(fao_path,encoding=fao_encoding)
+                # Calculate average through years
+                df_fao["value"] = df_fao[fao_years].mean(axis=1)
+                # Pivot Elements to columns
+                df_fao = df_fao.pivot_table(index=[fao_key_crop], columns=[fao_elements_col], values="value")
+                df_fao.reset_index(level=[fao_key_crop], inplace=True)
+                print("\tMerging by crops")
+                df_merged = pd.merge(df,df_fao,how="left",left_on=[treaty_key_crop],right_on=[fao_key_crop])
+                print("\tNumber rows: df=",df.shape[0],"fao=",df_fao.shape[0],"merged=",df_merged.shape[0])
+                # Saving data
+                df = df_merged
 
-            #df_fao = df_fao.groupby([fao_key_crop,fao_elements_col],as_index=False)[fao_years].mean()
-            df_fao["value"] = df_fao[fao_years].mean(axis=1)
-            #df_fao = pd.melt(df_fao, id_vars=[fao_key_crop,fao_elements_col], value_vars="value")
-            df_fao = df_fao.pivot_table(index=[fao_key_crop], columns=[fao_elements_col], values="value")
-            df_fao.reset_index(level=[fao_key_crop], inplace=True)
-
-            print("\tMerging by crops")
-            df_merged = pd.merge(df,df_fao,how="left",left_on=[treaty_key_crop],right_on=[fao_key_crop])
-            print("\tNumber rows: treaty=",df.shape[0],"income=",df_fao.shape[0],"merged=",df_merged.shape[0])
-
-
+            # Create final dataframe with all data
+            df_merged = df
             # Saving
             print("\tSaving ", final_file)
             df_merged.to_csv(final_file, index = False, encoding = self.encoding)
-            
+
         else:
             print("\tNot processed: ",final_file)
+
+    ## Method that validate if a transfer was part of treaty or not
+    # It does for origin and recipient
+    # (string) origin: Field name for key of country from origin
+    # (string) recipient: Field name for key of country from recipient
+    # (string) file: File name of member for countries. It should be into inputs folder
+    # (string) sheet: Sheet name
+    # (string) key: Key field for merging data from nagoya
+    # (string) step: prefix of the output files. By default it is 06
+    # (bool) force: Set if the process have to for the execution of all files even if the were processed before.
+    #               By default it is False
+    def validate_transfer_was_part(self, df, origin, recipient, year, name, file, sheet, key_country, key_year):
+        path = os.path.join(self.inputs_folder, file)
+        print("\tProcessing file=", path)
+
+        xls = pd.ExcelFile(path)
+        df_transfer = xls.parse(sheet)
+
+        print("\tMerging origin")
+        df_merged = pd.merge(df,df_transfer,how="left",left_on=[origin],right_on=[key_country])
+        print("\tNumber rows: data=",df.shape[0],name +"=",df_transfer.shape[0],"merged=",df_merged.shape[0])
+
+        print("\tMerging recipient")
+        df_merged = pd.merge(df_merged,df_transfer,how="left",left_on=[recipient],right_on=[key_country])
+        print("\tNumber rows: data=",df.shape[0],name+"=",df_transfer.shape[0],"merged=",df_merged.shape[0])
+
+        # Setting if transfer was part of treaty or not
+        df_merged["origin_" + name + "_transfer"] = df_merged[key_year + "_x"] <= df_merged[year]
+        df_merged["recipient_" + name + "_transfer"] = df_merged[key_year + "_y"] <= df_merged[year]
+
+        return df_merged
 
     ## Method that merge the data with nagoya for each country.
     # (string) origin: Field name for key of country from origin
     # (string) recipient: Field name for key of country from recipient
+    # (string) year: Field name for key of transfer year
     # (string) nagoya_file: File name of nagoya for countries. It should be into inputs folder
     # (string) nagoya_sheet: Sheet name
     # (string) nagoya_key: Key field for merging data from nagoya
+    # (string) nagoya_key_year: Field name in which country started to be parted
     # (string) step: prefix of the output files. By default it is 06
     # (bool) force: Set if the process have to for the execution of all files even if the were processed before.
     #               By default it is False
-    def merge_nagoya(self, origin, recipient, nagoya_file, nagoya_sheet, nagoya_key, step="06",force=False):
+    def merge_nagoya(self, origin, recipient, year, nagoya_file, nagoya_sheet, nagoya_key, nagoya_key_year, step="06",force=False):
         final_path = os.path.join(self.getworkspace(),step)
         mf.create_review_folders(final_path, sm=False)
         # It checks if files should be force to process again or if the path exist
         final_file = os.path.join(final_path,"OK",self.outputs + ".csv")
         if force or not os.path.exists(final_file):
-            nagoya_path = os.path.join(self.inputs_folder,nagoya_file)
-            print("\tProcessing income=", nagoya_path,"data=",os.path.join(self.getworkspacestep("05"),self.outputs + ".csv"))
 
-            nagoya_xls = pd.ExcelFile(nagoya_path)
-            df_nagoya = nagoya_xls.parse(nagoya_sheet)
-
+            # Reading data
             df = pd.read_csv(os.path.join(self.getworkspacestep("05"),self.outputs + ".csv"), encoding = self.encoding)
+            # Calculating
+            df_merged = self.validate_transfer_was_part(df, origin, recipient, year, "nagoya", nagoya_file, nagoya_sheet, nagoya_key, nagoya_key_year)
 
-            print("\tMerging origin")
-            df_merged = pd.merge(df,df_nagoya,how="left",left_on=[origin],right_on=[nagoya_key])
-            print("\tNumber rows: treaty=",df.shape[0],"nagoya=",df_nagoya.shape[0],"merged=",df_merged.shape[0])
+            # Saving
+            print("\tSaving ", final_file)
+            df_merged.to_csv(final_file, index = False, encoding = self.encoding)
 
-            print("\tMerging recipient")
-            df_merged = pd.merge(df_merged,df_nagoya,how="left",left_on=[recipient],right_on=[nagoya_key])
-            print("\tNumber rows: treaty=",df.shape[0],"nagoya=",df_nagoya.shape[0],"merged=",df_merged.shape[0])
+        else:
+            print("\tNot processed: ",final_file)
+
+     ## Method that merge the data with member of treaty for each country.
+    # (string) origin: Field name for key of country from origin
+    # (string) recipient: Field name for key of country from recipient
+    # (string) year: Field name for key of transfer year
+    # (string) member_file: File name of nagoya for countries. It should be into inputs folder
+    # (string) member_sheet: Sheet name
+    # (string) member_key: Key field for merging data from nagoya
+    # (string) member_key_year: Field name in which country started to be parted
+    # (string) step: prefix of the output files. By default it is 07
+    # (bool) force: Set if the process have to for the execution of all files even if the were processed before.
+    #               By default it is False
+    def merge_members_treaty(self, origin, recipient, year, member_file, member_sheet, member_key, member_key_year, step="07",force=False):
+        final_path = os.path.join(self.getworkspace(),step)
+        mf.create_review_folders(final_path, sm=False)
+        # It checks if files should be force to process again or if the path exist
+        final_file = os.path.join(final_path,"OK",self.outputs + ".csv")
+        if force or not os.path.exists(final_file):
+
+            # Reading data
+            df = pd.read_csv(os.path.join(self.getworkspacestep("06"),self.outputs + ".csv"), encoding = self.encoding)
+            # Calculating
+            df_merged = self.validate_transfer_was_part(df, origin, recipient, year, "member_treaty", member_file, member_sheet, member_key, member_key_year)
 
             # Saving
             print("\tSaving ", final_file)
@@ -298,14 +357,14 @@ class Treaty(object):
     # (string) step: prefix of the output files. By default it is 02
     # (bool) force: Set if the process have to for the execution of all files even if the were processed before.
     #               By default it is False
-    def change_names(self, columns, step="07",force=False):
+    def change_names(self, columns, step="08",force=False):
         final_path = os.path.join(self.getworkspace(),step)
         mf.create_review_folders(final_path, er=False,sm=False)
         # It checks if files should be force to process again or if the path exist
         final_file = os.path.join(final_path,"OK",self.outputs + ".csv")
         if force or not os.path.exists(final_file):
-            print("\tProcessing data=",os.path.join(self.getworkspacestep("06"),self.outputs + ".csv"))
-            df = pd.read_csv(os.path.join(self.getworkspacestep("06"),self.outputs + ".csv"), encoding = self.encoding)
+            print("\tProcessing data=",os.path.join(self.getworkspacestep("07"),self.outputs + ".csv"))
+            df = pd.read_csv(os.path.join(self.getworkspacestep("07"),self.outputs + ".csv"), encoding = self.encoding)
             df.columns = columns["new"]
             #print(columns.loc[columns["drop"]==0:"new"].head())
             columns_final = columns.loc[columns["drop"]==0,"new"]

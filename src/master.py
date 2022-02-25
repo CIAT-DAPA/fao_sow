@@ -55,7 +55,7 @@ income_years = [int(y) for y in str(conf_general.loc[conf_general["variable"] ==
 germplasm_file = conf_general.loc[conf_general["variable"] == "germplasm_file","value"].values[0]
 germplasm_sheet = conf_general.loc[conf_general["variable"] == "germplasm_sheet","value"].values[0]
 germplasm_key = conf_general.loc[conf_general["variable"] == "germplasm_key","value"].values[0]
-fao_file = conf_general.loc[conf_general["variable"] == "fao_file","value"].values[0]
+fao_files = str(conf_general.loc[conf_general["variable"] == "fao_files","value"].values[0]).split(',')
 fao_years = str(conf_general.loc[conf_general["variable"] == "fao_years","value"].values[0]).split(',')
 fao_elements_col = conf_general.loc[conf_general["variable"] == "fao_elements_col","value"].values[0]
 fao_key_crop = conf_general.loc[conf_general["variable"] == "fao_key_crop","value"].values[0]
@@ -63,6 +63,11 @@ fao_encoding = conf_general.loc[conf_general["variable"] == "fao_encoding","valu
 nagoya_file = conf_general.loc[conf_general["variable"] == "nagoya_file","value"].values[0]
 nagoya_sheet = conf_general.loc[conf_general["variable"] == "nagoya_sheet","value"].values[0]
 nagoya_key = conf_general.loc[conf_general["variable"] == "nagoya_key","value"].values[0]
+nagoya_key_year = conf_general.loc[conf_general["variable"] == "nagoya_key_year","value"].values[0]
+member_file = conf_general.loc[conf_general["variable"] == "member_file","value"].values[0]
+member_sheet = conf_general.loc[conf_general["variable"] == "member_sheet","value"].values[0]
+member_key = conf_general.loc[conf_general["variable"] == "member_key","value"].values[0]
+member_key_year = conf_general.loc[conf_general["variable"] == "member_key_year","value"].values[0]
 ##############################################
 # 02 - Processing Treaty Data
 ##############################################
@@ -78,9 +83,11 @@ treaty.merge_income(treaty_key_country_origin,treaty_key_country_recipient, trea
 print("Merging with germplasm data")
 treaty.merge_germplasm(treaty_key_germplasm,germplasm_file, germplasm_sheet,germplasm_key)
 print("Merging with fato data")
-treaty.merge_fao(treaty_key_crop,fao_file,fao_years,fao_elements_col,fao_key_crop,fao_encoding)
+treaty.merge_fao(treaty_key_crop,fao_files,fao_years,fao_elements_col,fao_key_crop,fao_encoding)
 print("Merging with nagoya")
-treaty.merge_nagoya(treaty_name_country_origin,treaty_name_country_recipient, nagoya_file,nagoya_sheet,nagoya_key)
+treaty.merge_nagoya(treaty_name_country_origin,treaty_name_country_recipient, treaty_year, nagoya_file,nagoya_sheet,nagoya_key,nagoya_key_year)
+print("Merging with members of treaty")
+treaty.merge_members_treaty(treaty_key_country_origin,treaty_key_country_recipient, treaty_year, member_file,member_sheet,member_key,member_key_year)
 print("Fixing columns names")
 treaty.change_names(conf_xls.parse("treaty_columns"))
 
