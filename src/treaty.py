@@ -250,6 +250,44 @@ class Treaty(object):
         else:
             print("\tNot processed: ",final_file)
 
+    ## Method that merge the data with nagoya for each country.
+    # (string) origin: Field name for key of country from origin
+    # (string) recipient: Field name for key of country from recipient
+    # (string) nagoya_file: File name of nagoya for countries. It should be into inputs folder
+    # (string) nagoya_sheet: Sheet name
+    # (string) nagoya_key: Key field for merging data from nagoya
+    # (string) step: prefix of the output files. By default it is 06
+    # (bool) force: Set if the process have to for the execution of all files even if the were processed before.
+    #               By default it is False
+    def merge_nagoya(self, origin, recipient, nagoya_file, nagoya_sheet, nagoya_key, step="06",force=False):
+        final_path = os.path.join(self.getworkspace(),step)
+        mf.create_review_folders(final_path, sm=False)
+        # It checks if files should be force to process again or if the path exist
+        final_file = os.path.join(final_path,"OK",self.outputs + ".csv")
+        if force or not os.path.exists(final_file):
+            nagoya_path = os.path.join(self.inputs_folder,nagoya_file)
+            print("\tProcessing income=", nagoya_path,"data=",os.path.join(self.getworkspacestep("05"),self.outputs + ".csv"))
+
+            nagoya_xls = pd.ExcelFile(nagoya_path)
+            df_nagoya = nagoya_xls.parse(nagoya_sheet)
+
+            df = pd.read_csv(os.path.join(self.getworkspacestep("05"),self.outputs + ".csv"), encoding = self.encoding)
+
+            print("\tMerging origin")
+            df_merged = pd.merge(df,df_nagoya,how="left",left_on=[origin],right_on=[nagoya_key])
+            print("\tNumber rows: treaty=",df.shape[0],"nagoya=",df_nagoya.shape[0],"merged=",df_merged.shape[0])
+
+            print("\tMerging recipient")
+            df_merged = pd.merge(df_merged,df_nagoya,how="left",left_on=[recipient],right_on=[nagoya_key])
+            print("\tNumber rows: treaty=",df.shape[0],"nagoya=",df_nagoya.shape[0],"merged=",df_merged.shape[0])
+
+            # Saving
+            print("\tSaving ", final_file)
+            df_merged.to_csv(final_file, index = False, encoding = self.encoding)
+
+        else:
+            print("\tNot processed: ",final_file)
+
     ## Method that change the columns names of dataset
     # (string) origin: Field name for key of country from origin
     # (string) recipient: Field name for key of country from recipient
@@ -260,15 +298,18 @@ class Treaty(object):
     # (string) step: prefix of the output files. By default it is 02
     # (bool) force: Set if the process have to for the execution of all files even if the were processed before.
     #               By default it is False
-    def change_names(self, columns, step="06",force=False):
+    def change_names(self, columns, step="07",force=False):
         final_path = os.path.join(self.getworkspace(),step)
         mf.create_review_folders(final_path, er=False,sm=False)
         # It checks if files should be force to process again or if the path exist
         final_file = os.path.join(final_path,"OK",self.outputs + ".csv")
         if force or not os.path.exists(final_file):
-            print("\tProcessing data=",os.path.join(self.getworkspacestep("05"),self.outputs + ".csv"))
-            df = pd.read_csv(os.path.join(self.getworkspacestep("05"),self.outputs + ".csv"), encoding = self.encoding)
+            print("\tProcessing data=",os.path.join(self.getworkspacestep("06"),self.outputs + ".csv"))
+            df = pd.read_csv(os.path.join(self.getworkspacestep("06"),self.outputs + ".csv"), encoding = self.encoding)
             df.columns = columns["new"]
+            #print(columns.loc[columns["drop"]==0:"new"].head())
+            columns_final = columns.loc[columns["drop"]==0,"new"]
+            df = df[columns_final]
             # Saving
             print("\tSaving ", final_file)
             df.to_csv(final_file, index = False, encoding = self.encoding)

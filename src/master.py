@@ -38,6 +38,8 @@ treaty_sheet = conf_general.loc[conf_general["variable"] == "treaty_sheet","valu
 treaty_key_crop = conf_general.loc[conf_general["variable"] == "treaty_key_crop","value"].values[0]
 treaty_key_country_origin = conf_general.loc[conf_general["variable"] == "treaty_key_country_origin","value"].values[0]
 treaty_key_country_recipient = conf_general.loc[conf_general["variable"] == "treaty_key_country_recipient","value"].values[0]
+treaty_name_country_origin = conf_general.loc[conf_general["variable"] == "treaty_name_country_origin","value"].values[0]
+treaty_name_country_recipient = conf_general.loc[conf_general["variable"] == "treaty_name_country_recipient","value"].values[0]
 treaty_year = conf_general.loc[conf_general["variable"] == "treaty_year","value"].values[0]
 treaty_key_germplasm = conf_general.loc[conf_general["variable"] == "treaty_key_germplasm","value"].values[0]
 plant_treaty_fields = str(conf_general.loc[conf_general["variable"] == "plant_treaty_fields","value"].values[0]).split(',')
@@ -58,6 +60,9 @@ fao_years = str(conf_general.loc[conf_general["variable"] == "fao_years","value"
 fao_elements_col = conf_general.loc[conf_general["variable"] == "fao_elements_col","value"].values[0]
 fao_key_crop = conf_general.loc[conf_general["variable"] == "fao_key_crop","value"].values[0]
 fao_encoding = conf_general.loc[conf_general["variable"] == "fao_encoding","value"].values[0]
+nagoya_file = conf_general.loc[conf_general["variable"] == "nagoya_file","value"].values[0]
+nagoya_sheet = conf_general.loc[conf_general["variable"] == "nagoya_sheet","value"].values[0]
+nagoya_key = conf_general.loc[conf_general["variable"] == "nagoya_key","value"].values[0]
 ##############################################
 # 02 - Processing Treaty Data
 ##############################################
@@ -74,7 +79,8 @@ print("Merging with germplasm data")
 treaty.merge_germplasm(treaty_key_germplasm,germplasm_file, germplasm_sheet,germplasm_key)
 print("Merging with fato data")
 treaty.merge_fao(treaty_key_crop,fao_file,fao_years,fao_elements_col,fao_key_crop,fao_encoding)
-
+print("Merging with nagoya")
+treaty.merge_nagoya(treaty_name_country_origin,treaty_name_country_recipient, nagoya_file,nagoya_sheet,nagoya_key)
 print("Fixing columns names")
 treaty.change_names(conf_xls.parse("treaty_columns"))
 
