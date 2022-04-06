@@ -8,6 +8,7 @@ import pandas as pd
 import tools.manage_files as mf
 
 from treaty import Treaty
+from fao_views import FAOViews
 
 ##############################################
 # 01 - Setting configuration
@@ -68,6 +69,18 @@ member_file = conf_general.loc[conf_general["variable"] == "member_file","value"
 member_sheet = conf_general.loc[conf_general["variable"] == "member_sheet","value"].values[0]
 member_key = conf_general.loc[conf_general["variable"] == "member_key","value"].values[0]
 member_key_year = conf_general.loc[conf_general["variable"] == "member_key_year","value"].values[0]
+######################
+fao_views_encoding = conf_general.loc[conf_general["variable"] == "fao_views_encoding","value"].values[0]
+fao_views_file = conf_general.loc[conf_general["variable"] == "fao_views_file","value"].values[0]
+fao_views_sheet = conf_general.loc[conf_general["variable"] == "fao_views_sheet","value"].values[0]
+fao_views_key_crop = conf_general.loc[conf_general["variable"] == "fao_views_key_crop","value"].values[0]
+fao_views_key_country_origin = conf_general.loc[conf_general["variable"] == "fao_views_key_country_origin","value"].values[0]
+fao_views_year = conf_general.loc[conf_general["variable"] == "fao_views_year","value"].values[0]
+fao_views_year_end = conf_general.loc[conf_general["variable"] == "fao_views_year_end","value"].values[0]
+fao_views_key_germplasm = conf_general.loc[conf_general["variable"] == "fao_views_key_germplasm","value"].values[0]
+fao_views_name_country_origin = conf_general.loc[conf_general["variable"] == "fao_views_name_country_origin","value"].values[0]
+
+
 ##############################################
 # 02 - Processing Treaty Data
 ##############################################
@@ -82,7 +95,7 @@ print("Merging with income data")
 treaty.merge_income(treaty_key_country_origin,treaty_key_country_recipient, treaty_year,income_file,income_sheet,income_key,income_years)
 print("Merging with germplasm data")
 treaty.merge_germplasm(treaty_key_germplasm,germplasm_file, germplasm_sheet,germplasm_key)
-print("Merging with fato data")
+print("Merging with fao data")
 treaty.merge_fao(treaty_key_crop,fao_files,fao_years,fao_elements_col,fao_key_crop,fao_encoding)
 print("Merging with nagoya")
 treaty.merge_nagoya(treaty_name_country_origin,treaty_name_country_recipient, treaty_year, nagoya_file,nagoya_sheet,nagoya_key,nagoya_key_year)
@@ -91,4 +104,26 @@ treaty.merge_members_treaty(treaty_key_country_origin,treaty_key_country_recipie
 print("Fixing columns names")
 treaty.change_names(conf_xls.parse("treaty_columns"))
 
+##############################################
+# 03 - Processing FAO Views Data
+##############################################
+
+print("03 - Processing FAO Views Data")
+fao_views = FAOViews(inputs_folder, fao_views_file, fao_views_sheet, workspace_folder)
+#print("Merging with plant treaty data")
+#fao_views.merge_plant_treaty(conf_xls.parse("plant_treaty"), plant_treaty_fields, plant_treaty_key_crop, fao_views_key_crop)
+print("Merging with countries data")
+fao_views.merge_countries(fao_views_key_country_origin,countries_file,countries_sheet, countries_fields,countries_key_country)
+print("Merging with income data")
+fao_views.merge_income(fao_views_key_country_origin, fao_views_year,income_file,income_sheet,income_key,income_years)
+print("Merging with germplasm data")
+fao_views.merge_germplasm(fao_views_key_germplasm,germplasm_file, germplasm_sheet,germplasm_key)
+print("Merging with fao data")
+fao_views.merge_fao(fao_views_key_crop,fao_files,fao_years,fao_elements_col,fao_key_crop,fao_encoding)
+print("Merging with nagoya")
+fao_views.merge_nagoya(fao_views_name_country_origin, fao_views_year_end, nagoya_file,nagoya_sheet,nagoya_key,nagoya_key_year)
+print("Merging with members of treaty")
+fao_views.merge_members_treaty(fao_views_key_country_origin, fao_views_year_end, member_file,member_sheet,member_key,member_key_year)
+print("Fixing columns names")
+fao_views.change_names(conf_xls.parse("fao_views_columns"))
 
