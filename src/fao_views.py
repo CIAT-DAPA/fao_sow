@@ -123,7 +123,7 @@ class FAOViews(object):
             df[['year_start','year_end']] = df[fao_views_year].str.split('-',expand=True)
 
             print("\tMerging origin")
-            df_merged = pd.merge(df,df_income,how="left",left_on=[origin,'year_end'],right_on=[income_key,"variable"])
+            df_merged = pd.merge(df,df_income,how="left",left_on=[origin,'year_start'],right_on=[income_key,"variable"])
             print("\tNumber rows: fao_views=",df.shape[0],"income=",df_income.shape[0],"merged=",df_merged.shape[0])
 
             # Saving
