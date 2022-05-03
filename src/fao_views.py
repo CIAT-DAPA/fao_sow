@@ -124,6 +124,7 @@ class FAOViews(object):
 
             print("\tMerging origin")
             df_merged = pd.merge(df,df_income,how="left",left_on=[origin,'year_start'],right_on=[income_key,"variable"])
+            df_merged = pd.merge(df_merged,df_income,how="left",left_on=[origin,'year_end'],right_on=[income_key,"variable"], suffixes=["_start","_end"])
             print("\tNumber rows: fao_views=",df.shape[0],"income=",df_income.shape[0],"merged=",df_merged.shape[0])
 
             # Saving
@@ -221,7 +222,7 @@ class FAOViews(object):
     # (string) step: prefix of the output files. By default it is 06
     # (bool) force: Set if the process have to for the execution of all files even if the were processed before.
     #               By default it is False
-    def validate_transfer_was_part(self, df, origin,  year, name, file, sheet, key_country, key_year):
+    def validate_transfer_was_part(self, df, origin, years, name, file, sheet, key_country, key_year):
         path = os.path.join(self.inputs_folder, file)
         print("\tProcessing file=", path)
 
@@ -234,13 +235,14 @@ class FAOViews(object):
         print("\tNumber rows: data=",df.shape[0],name +"=",df_transfer.shape[0],"merged=",df_merged.shape[0])
 
         # Setting if transfer was part of treaty or not
-        df_merged["origin_" + name + "_transfer"] = df_merged[key_year] <= df_merged[year]
+        for y in years:
+            df_merged["origin_" + name + "_transfer_" + str(y)] = df_merged[key_year] <= df_merged[y]
 
         return df_merged
 
     ## Method that merge the data with nagoya for each country.
     # (string) origin: Field name for key of country from origin
-    # (string) year: Field name for key of transfer year
+    # (string[]) years: Fields names for key of transfer year
     # (string) nagoya_file: File name of nagoya for countries. It should be into inputs folder
     # (string) nagoya_sheet: Sheet name
     # (string) nagoya_key: Key field for merging data from nagoya
@@ -248,7 +250,7 @@ class FAOViews(object):
     # (string) step: prefix of the output files. By default it is 06
     # (bool) force: Set if the process have to for the execution of all files even if the were processed before.
     #               By default it is False
-    def merge_nagoya(self, origin, year, nagoya_file, nagoya_sheet, nagoya_key, nagoya_key_year, step="05",force=False):
+    def merge_nagoya(self, origin, years, nagoya_file, nagoya_sheet, nagoya_key, nagoya_key_year, step="05",force=False):
         final_path = os.path.join(self.getworkspace(),step)
         mf.create_review_folders(final_path, sm=False)
         # It checks if files should be force to process again or if the path exist
@@ -258,7 +260,8 @@ class FAOViews(object):
             # Reading data
             df = pd.read_csv(os.path.join(self.getworkspacestep("04"),self.outputs + ".csv"), encoding = self.encoding)
             # Calculating
-            df_merged = self.validate_transfer_was_part(df, origin, year, "nagoya", nagoya_file, nagoya_sheet, nagoya_key, nagoya_key_year)
+            print(nagoya_key_year)
+            df_merged = self.validate_transfer_was_part(df, origin, years, "nagoya", nagoya_file, nagoya_sheet, nagoya_key, nagoya_key_year)
 
             # Saving
             print("\tSaving ", final_file)
@@ -269,7 +272,7 @@ class FAOViews(object):
 
      ## Method that merge the data with member of treaty for each country.
     # (string) origin: Field name for key of country from origin
-    # (string) year: Field name for key of transfer year
+    # (string[]) years: Fields names for key of transfer year
     # (string) member_file: File name of nagoya for countries. It should be into inputs folder
     # (string) member_sheet: Sheet name
     # (string) member_key: Key field for merging data from nagoya
@@ -277,7 +280,7 @@ class FAOViews(object):
     # (string) step: prefix of the output files. By default it is 07
     # (bool) force: Set if the process have to for the execution of all files even if the were processed before.
     #               By default it is False
-    def merge_members_treaty(self, origin,  year, member_file, member_sheet, member_key, member_key_year, step="06",force=False):
+    def merge_members_treaty(self, origin,  years, member_file, member_sheet, member_key, member_key_year, step="06",force=False):
         final_path = os.path.join(self.getworkspace(),step)
         mf.create_review_folders(final_path, sm=False)
         # It checks if files should be force to process again or if the path exist
@@ -287,7 +290,7 @@ class FAOViews(object):
             # Reading data
             df = pd.read_csv(os.path.join(self.getworkspacestep("05"),self.outputs + ".csv"), encoding = self.encoding)
             # Calculating
-            df_merged = self.validate_transfer_was_part(df, origin, year, "member_treaty", member_file, member_sheet, member_key, member_key_year)
+            df_merged = self.validate_transfer_was_part(df, origin, years, "member_treaty", member_file, member_sheet, member_key, member_key_year)
 
             # Saving
             print("\tSaving ", final_file)

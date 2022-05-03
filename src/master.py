@@ -76,7 +76,8 @@ fao_views_sheet = conf_general.loc[conf_general["variable"] == "fao_views_sheet"
 fao_views_key_crop = conf_general.loc[conf_general["variable"] == "fao_views_key_crop","value"].values[0]
 fao_views_key_country_origin = conf_general.loc[conf_general["variable"] == "fao_views_key_country_origin","value"].values[0]
 fao_views_year = conf_general.loc[conf_general["variable"] == "fao_views_year","value"].values[0]
-fao_views_year_end = conf_general.loc[conf_general["variable"] == "fao_views_year_end","value"].values[0]
+#fao_views_year_end = conf_general.loc[conf_general["variable"] == "fao_views_year_end","value"].values[0]
+fao_views_years = conf_general.loc[conf_general["variable"] == "fao_views_years","value"].values[0].split(",")
 fao_views_key_germplasm = conf_general.loc[conf_general["variable"] == "fao_views_key_germplasm","value"].values[0]
 fao_views_name_country_origin = conf_general.loc[conf_general["variable"] == "fao_views_name_country_origin","value"].values[0]
 
@@ -121,9 +122,9 @@ fao_views.merge_germplasm(fao_views_key_germplasm,germplasm_file, germplasm_shee
 print("Merging with fao data")
 fao_views.merge_fao(fao_views_key_crop,fao_files,fao_years,fao_elements_col,fao_key_crop,fao_encoding)
 print("Merging with nagoya")
-fao_views.merge_nagoya(fao_views_name_country_origin, fao_views_year_end, nagoya_file,nagoya_sheet,nagoya_key,nagoya_key_year)
+fao_views.merge_nagoya(fao_views_name_country_origin, fao_views_years, nagoya_file,nagoya_sheet,nagoya_key,nagoya_key_year)
 print("Merging with members of treaty")
-fao_views.merge_members_treaty(fao_views_key_country_origin, fao_views_year_end, member_file,member_sheet,member_key,member_key_year)
+fao_views.merge_members_treaty(fao_views_key_country_origin, fao_views_years, member_file,member_sheet,member_key,member_key_year)
 print("Fixing columns names")
 fao_views.change_names(conf_xls.parse("fao_views_columns"))
 
